@@ -23,7 +23,6 @@
 
 body {
   margin: 0;
-  min-width: 960px;
   min-height: 100vh;
   background:
     linear-gradient(90deg, rgba(21, 23, 29, 0.045) 1px, transparent 1px),
@@ -42,9 +41,9 @@ button {
 }
 
 .app-shell {
-  width: min(1440px, 100%);
+  width: min(1200px, 100%);
   margin: 0 auto;
-  padding: 24px;
+  padding: 20px;
 }
 
 .topbar {
@@ -125,10 +124,15 @@ h2 {
 }
 
 .metric-strip {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.metric-card {
+  flex: 1 1 160px;
+  min-width: 160px;
 }
 
 .probe-panel {
@@ -230,7 +234,7 @@ h2 {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: 1fr 320px;
   gap: 16px;
   align-items: start;
 }
@@ -243,8 +247,8 @@ h2 {
 }
 
 .toolbar {
-  display: grid;
-  grid-template-columns: auto minmax(220px, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   padding: 12px;
@@ -301,7 +305,7 @@ h2 {
 
 table {
   width: 100%;
-  min-width: 940px;
+  min-width: 800px;
   border-collapse: collapse;
 }
 
@@ -559,13 +563,14 @@ tbody tr.selected {
   text-align: center;
 }
 
-@media (max-width: 1120px) {
-  body {
-    min-width: 760px;
+@media (max-width: 1024px) {
+  .app-shell {
+    width: 100%;
+    padding: 16px;
   }
 
   .metric-strip {
-    grid-template-columns: repeat(3, minmax(140px, 1fr));
+    justify-content: stretch;
   }
 
   .workspace {
@@ -573,6 +578,48 @@ tbody tr.selected {
   }
 
   .side-panel {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    min-width: unset;
+  }
+
+  .metric-strip {
+    flex-direction: column;
+  }
+
+  .metric-card {
+    min-width: unset;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .segmented {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .side-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-actions {
+    justify-content: flex-end;
   }
 }
