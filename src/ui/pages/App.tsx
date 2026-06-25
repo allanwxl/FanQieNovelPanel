@@ -237,8 +237,9 @@ export function App() {
             <FlaskConical size={16} />
             {probeLoading ? "验证中" : "验证接口"}
           </button>
-          <button className="icon-button" onClick={syncAndRefresh} disabled={loading} title="同步番茄数据">
-            <RefreshCw size={18} />
+          <button className="command-button" onClick={syncAndRefresh} disabled={loading} type="button">
+            <RefreshCw size={16} />
+            {loading ? "同步中..." : "同步数据"}
           </button>
         </div>
       </header>
