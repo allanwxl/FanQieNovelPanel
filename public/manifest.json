@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "番茄短故事数据面板",
+  "description": "本地优先的番茄短故事数据增强面板，只读聚合作者自己的作品数据。",
+  "version": "0.1.0",
+  "permissions": ["storage", "sidePanel"],
+  "host_permissions": ["https://fanqienovel.com/*"],
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "番茄短故事数据面板",
+    "default_popup": "index.html"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  }
+}
