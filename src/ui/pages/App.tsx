@@ -302,7 +302,7 @@ export function App() {
           </div>
 
           <div className="table-wrap">
-            <table>
+            <table className="desktop-only">
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
@@ -335,6 +335,53 @@ export function App() {
                 ))}
               </tbody>
             </table>
+
+            <div className="card-list mobile-only">
+              {table.getRowModel().rows.map((row) => (
+                <div
+                  key={row.id}
+                  className={`work-card ${selectedId === row.original.work.platformWorkId ? "selected" : ""}`}
+                  onClick={() => setSelectedId(row.original.work.platformWorkId)}
+                >
+                  <div className="work-card-header">
+                    <span className="work-card-title">{row.original.work.title}</span>
+                    <ScoreBadge row={row.original} />
+                  </div>
+                  <div className="work-card-meta">
+                    {row.original.work.signStatus ?? "未标记"} · {row.original.work.status === "finished" ? "完结" : "连载"}
+                  </div>
+                  <div className="work-card-stats">
+                    <div className="stat-item">
+                      <span className="stat-label">展现</span>
+                      <span className="stat-value">{formatNumber(row.original.impressions)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">阅读</span>
+                      <span className="stat-value">{formatNumber(row.original.readers)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">点击率</span>
+                      <span className="stat-value">{formatPercent(row.original.clickRate)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">触底</span>
+                      <span className="stat-value">{formatNumber(row.original.finishedReaders)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">触底率</span>
+                      <span className="stat-value">{formatPercent(row.original.readCompletionRate)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">7日增长</span>
+                      <span className={`stat-value ${row.original.growthRate7d !== null ? (row.original.growthRate7d >= 0 ? "trend-up" : "trend-down") : ""}`}>
+                        {row.original.growthRate7d === null ? "暂无" : formatPercent(row.original.growthRate7d)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             {!table.getRowModel().rows.length && <div className="empty-state">没有匹配的作品</div>}
           </div>
         </div>
