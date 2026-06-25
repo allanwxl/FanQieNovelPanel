@@ -33,8 +33,14 @@ const getPath = (source: unknown, path: string): unknown => {
 
 const firstString = (source: unknown, paths: string[]) => {
   for (const path of paths) {
-    const value = asString(getPath(source, path));
-    if (value) return value;
+    const raw = getPath(source, path);
+    if (Array.isArray(raw) && raw.length > 0) {
+      const value = asString(raw[0]);
+      if (value) return value;
+    } else {
+      const value = asString(raw);
+      if (value) return value;
+    }
   }
   return undefined;
 };
@@ -95,6 +101,10 @@ const extractList = (payload: unknown): unknown[] => {
 export const extractFanqieList = extractList;
 
 export const normalizeWork = (item: unknown): Work | null => {
+  if (!isRecord(item)) {
+    return null;
+  }
+  
   const platformWorkId = firstString(item, [
     "book_id",
     "bookId",
