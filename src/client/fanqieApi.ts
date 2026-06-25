@@ -40,3 +40,13 @@ export const fanqieEndpoints = {
   shortStatsSingleCommon: "/api/author/sa_stats/single_common/v0/",
   shortStatsSingleByDate: "/api/author/sa_stats/single_by_date/v0/"
 } as const;
+
+export const fanqieEndpointNames: Record<string, string> = {
+  [fanqieEndpoints.userInfo]: "用户信息",
+  [fanqieEndpoints.shortArticleList]: "短故事列表",
+  [fanqieEndpoints.shortStatsBookList]: "作品统计列表",
+  [fanqieEndpoints.shortStatsCommon]: "累计指标",
+  [fanqieEndpoints.shortStatsByDate]: "按日期指标",
+  [fanqieEndpoints.shortStatsSingleCommon]: "单作品累计指标",
+  [fanqieEndpoints.shortStatsSingleByDate]: "单作品按日期指标"
+};

@@ -1,4 +1,4 @@
-import { fanqieEndpoints, fanqieGet } from "../client/fanqieApi";
+import { fanqieEndpoints, fanqieEndpointNames, fanqieGet } from "../client/fanqieApi";
 import { syncFanqieData } from "../sync/fanqieSync";
 
 const sanitizeResult = (result: unknown) => {
@@ -60,13 +60,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       })
     ])
       .then((results) => {
-        const labels = ["userInfo", "singleCommon", "singleByDate", "statsBookList", "shortArticleList"];
+        const endpoints = [
+          fanqieEndpoints.userInfo,
+          fanqieEndpoints.shortStatsSingleCommon,
+          fanqieEndpoints.shortStatsSingleByDate,
+          fanqieEndpoints.shortStatsBookList,
+          fanqieEndpoints.shortArticleList
+        ];
         sendResponse({
           ok: true,
           bookId,
           checkedAt: new Date().toISOString(),
           results: results.map((result, index) => ({
-            name: labels[index],
+            name: fanqieEndpointNames[endpoints[index]] ?? endpoints[index],
             status: result.status,
             body: result.status === "fulfilled" ? sanitizeResult(result.value) : String(result.reason)
           }))

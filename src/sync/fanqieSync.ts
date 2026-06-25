@@ -98,19 +98,23 @@ const fetchStatsForWork = async (work: Work) => {
   const endDate = yesterday();
   const startDate = dayjs(endDate).subtract(SYNC_DAYS - 1, "day").format("YYYY-MM-DD");
 
-  const byDateResult = await fanqieGet<unknown>({
-    path: fanqieEndpoints.shortStatsSingleByDate,
-    query: {
-      book_id: work.platformWorkId,
-      start_date: startDate,
-      end_date: endDate
-    }
-  });
-  const byDateData = ensureOk(`作品 ${work.platformWorkId} 日期指标`, byDateResult);
-  const items = extractFanqieList(byDateData);
-  const stats = items.map((item) => normalizeDailyStats(item, work.platformWorkId));
+  try {
+    const byDateResult = await fanqieGet<unknown>({
+      path: fanqieEndpoints.shortStatsSingleByDate,
+      query: {
+        book_id: work.platformWorkId,
+        start_date: startDate,
+        end_date: endDate
+      }
+    });
+    const byDateData = ensureOk(`作品 ${work.platformWorkId} 日期指标`, byDateResult);
+    const items = extractFanqieList(byDateData);
+    const stats = items.map((item) => normalizeDailyStats(item, work.platformWorkId));
 
-  if (stats.length > 0) return stats;
+    if (stats.length > 0) return stats;
+  } catch {
+    // singleByDate 失败时尝试 singleCommon
+  }
 
   const commonResult = await fanqieGet<unknown>({
     path: fanqieEndpoints.shortStatsSingleCommon,
