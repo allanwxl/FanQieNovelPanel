@@ -48,14 +48,15 @@ button {
 
 .topbar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 16px;
   margin-bottom: 18px;
+  flex-wrap: wrap;
 }
 
 .eyebrow {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   color: var(--teal);
   font-size: 12px;
   font-weight: 800;
@@ -69,7 +70,7 @@ p {
 }
 
 h1 {
-  font-size: 27px;
+  font-size: 24px;
   line-height: 1.2;
 }
 
@@ -81,13 +82,13 @@ h2 {
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .sync-status {
-  max-width: 460px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .icon-button,
@@ -637,6 +638,10 @@ tbody tr.selected {
     padding: 16px;
   }
 
+  h1 {
+    font-size: 22px;
+  }
+
   .metric-strip {
     justify-content: stretch;
   }
@@ -661,6 +666,20 @@ tbody tr.selected {
     display: block;
   }
 
+  .topbar {
+    gap: 12px;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .sync-status {
+    flex: 1;
+    min-width: 120px;
+  }
+
   .toolbar {
     flex-wrap: wrap;
   }
@@ -669,6 +688,28 @@ tbody tr.selected {
 @media (max-width: 640px) {
   body {
     min-width: unset;
+  }
+
+  .app-shell {
+    padding: 12px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .topbar-actions {
+    justify-content: flex-end;
+  }
+
+  .command-button {
+    flex: 1;
+    min-width: 0;
   }
 
   .metric-strip {
@@ -694,15 +735,6 @@ tbody tr.selected {
 
   .side-panel {
     grid-template-columns: 1fr;
-  }
-
-  .topbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .topbar-actions {
-    justify-content: flex-end;
   }
 
   .work-card-stats {
