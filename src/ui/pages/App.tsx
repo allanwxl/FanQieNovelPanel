@@ -294,7 +294,7 @@ export function App() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div>
+        <div className="topbar-left">
           <p className="eyebrow">Fanqie Short Story Ops</p>
           <h1>番茄短故事数据面板</h1>
         </div>
