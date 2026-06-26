@@ -2,6 +2,16 @@
 
 > 一个 Chrome 浏览器插件，用于可视化展示番茄小说作者的短故事作品数据，辅助精准运营和推广决策。
 
+## 界面预览
+
+### 大屏桌面端
+
+![大屏展示](assets/大屏展示.png)
+
+### 小屏响应式
+
+![小屏展示](assets/小屏展示.png)
+
 ## 功能特性
 
 - **作品数据聚合**：统一展示所有短故事的曝光、点击、阅读、触底等核心指标
@@ -65,8 +75,7 @@ FanQieNovelPanel/
 │   │   ├── schema.ts
 │   │   └── index.ts
 │   ├── domain/           # 业务逻辑（指标计算、评分）
-│   │   ├── metrics.ts
-│   │   └── mockData.ts
+│   │   └── metrics.ts
 │   ├── shared/           # 共享类型和常量
 │   │   ├── types.ts
 │   │   └── constants.ts
@@ -78,8 +87,9 @@ FanQieNovelPanel/
 │       ├── pages/
 │       │   └── App.tsx
 │       └── styles.css
+├── assets/               # 展示截图
 ├── docs/                 # 项目文档
-├── public/               # 静态资源
+├── public/               # 静态资源（manifest.json、图标）
 ├── index.html
 ├── package.json
 ├── tsconfig.json
@@ -149,7 +159,6 @@ FanQieNovelPanel/
 - 无测试框架
 - 无代码格式化工具
 - 构建时自动进行 TypeScript 类型检查
-- Mock 数据在首次加载时自动填充
 
 ## 合规声明
 
