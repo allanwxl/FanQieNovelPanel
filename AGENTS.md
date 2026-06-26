@@ -7,17 +7,10 @@ Chrome Extension (Side Panel) for visualizing Fanqie Novel short story analytics
 ## Quick Commands
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Development (runs on 127.0.0.1:5173)
-pnpm dev
-
-# Build (TypeScript check + Vite build)
-pnpm build
-
-# Preview production build
-pnpm preview
+pnpm install          # Install dependencies
+pnpm dev              # Dev server on 127.0.0.1:5173
+pnpm build            # TypeScript check + Vite build → dist/
+pnpm preview          # Preview production build
 ```
 
 ## Architecture
@@ -27,7 +20,7 @@ pnpm preview
 - **Entry Points**:
   - UI: `src/ui/main.tsx` → `src/ui/pages/App.tsx`
   - Background: `src/background/index.ts`
-  - Build output: `dist/` (manifest.json for extension loading)
+  - Build output: `dist/` (load as unpacked extension)
 
 ## Key Files
 
@@ -41,12 +34,20 @@ pnpm preview
 | `src/shared/types.ts` | All TypeScript types |
 | `src/ui/pages/App.tsx` | Main dashboard component (single-file) |
 
+## Known API Issues
+
+- **`singleByDate` endpoint returns 400** — code falls back to `singleCommon` (cumulative stats)
+- **`multi_title` is an array** `['标题']` not a string — `firstString()` in normalize.ts handles this
+- **`finishedReaders` field missing** from `singleCommon` response — always shows 0
+- **All cumulative stats stored with same date** (yesterday) — date range filtering has no effect
+- **Many API fields return empty strings `""`** — `asNumber()` returns `undefined` for these
+
 ## Development Notes
 
-- **No test framework** configured — no test commands available
-- **No linting/formatting** — no eslint, prettier, or similar tools
-- **No CI/CD** — no GitHub Actions workflows
-- **Package manager**: pnpm (workspace configured but single package)
+- **No test framework** — no test commands available
+- **No linting/formatting** — no eslint, prettier
+- **No CI/CD** — no GitHub Actions
+- **Package manager**: pnpm
 - **Chrome types**: `@types/chrome` in devDependencies, `types: ["chrome"]` in tsconfig
 - **Build**: Two entry points (app + background), output to `dist/`
 - **Dev server**: Binds to `127.0.0.1:5173` (not localhost)
@@ -71,4 +72,4 @@ IndexedDB database: `fanqie_short_story_panel`
 - Extension APIs only work when loaded as Chrome extension (not plain dev server)
 - `chrome.runtime.sendMessage` requires extension context
 - Dev server uses `127.0.0.1` not `localhost`
-- Mock data auto-seeds on first load if DB is empty
+- After modifying background script, must reload extension in chrome://extensions
