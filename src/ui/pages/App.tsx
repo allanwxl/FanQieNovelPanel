@@ -67,12 +67,15 @@ const columnHelper = createColumnHelper<AggregatedWork>();
 
 const formatSyncStatus = (syncState?: SyncState) => {
   if (!syncState?.message) return "本地面板已就绪";
-  if (
-    syncState.status === "running" &&
-    syncState.progressTotal !== undefined &&
-    syncState.progressTotal > 0
-  ) {
-    return `${syncState.message}`;
+  
+  let dateStr = "";
+  if (syncState.lastSyncedAt) {
+    const d = new Date(syncState.lastSyncedAt);
+    dateStr = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  }
+  
+  if (syncState.status === "success" && dateStr) {
+    return `${syncState.message} (${dateStr})`;
   }
   return syncState.message;
 };
