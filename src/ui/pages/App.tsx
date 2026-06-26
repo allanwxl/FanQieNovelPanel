@@ -297,9 +297,8 @@ export function App() {
         </div>
         <div className="topbar-actions">
           <span className="sync-status">{formatSyncStatus(data?.syncState)}</span>
-          <button className="command-button" onClick={handleProbeApis} disabled={probeLoading} type="button">
+          <button className="icon-button" onClick={handleProbeApis} disabled={probeLoading} title="验证接口" type="button">
             <FlaskConical size={16} />
-            {probeLoading ? "验证中" : "验证接口"}
           </button>
           <button className="command-button" onClick={syncAndRefresh} disabled={loading} type="button">
             <RefreshCw size={16} />
