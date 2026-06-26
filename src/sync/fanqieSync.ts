@@ -138,12 +138,13 @@ const fetchStatsForWork = async (
         path: fanqieEndpoints.shortStatsSingleByDate,
         query: {
           book_id: work.platformWorkId,
-          start_date: dayjs(statDate).startOf("day").unix(),
-          end_date: dayjs(statDate).endOf("day").unix()
+          start_date: statDate,
+          end_date: statDate
         }
       });
       const byDateData = ensureOk(`作品 ${work.platformWorkId} ${statDate} 日期指标`, byDateResult);
       const items = extractFanqieList(byDateData);
+      console.debug(`[fanqie-sync] singleByDate book=${work.platformWorkId} date=${statDate} items=${items.length} raw=`, items.length > 0 ? items[0] : byDateData);
 
       if (items.length > 0) {
         stats.push(...items.map((item) => normalizeDailyStats(item, work.platformWorkId, statDate)));
@@ -167,6 +168,7 @@ const fetchStatsForWork = async (
     query: { book_id: work.platformWorkId }
   });
   const commonData = ensureOk(`作品 ${work.platformWorkId} 累计指标`, commonResult);
+  console.debug(`[fanqie-sync] singleCommon book=${work.platformWorkId} raw=`, commonData);
   return [normalizeCommonStatsAsDaily(commonData, work.platformWorkId, yesterday())];
 };
 
