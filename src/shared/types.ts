@@ -27,6 +27,7 @@ export type WorkDailyStats = {
   retention30s?: number | null;
   retention60s?: number | null;
   finishedReaders?: number | null;
+  readCompletionRate?: number | null;
   groupHeat?: number | null;
   comments: number;
   likes: number;
@@ -49,12 +50,15 @@ export type SyncState = {
   status: "idle" | "running" | "success" | "failed";
   lastSyncedAt?: string;
   message?: string;
+  progressCurrent?: number;
+  progressTotal?: number;
 };
 
 export type SyncResult = {
   ok: boolean;
   worksSynced?: number;
   statsSynced?: number;
+  progressTotal?: number;
   error?: string;
   syncedAt?: string;
 };

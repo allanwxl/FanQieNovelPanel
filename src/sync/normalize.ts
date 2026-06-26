@@ -53,6 +53,12 @@ const firstNumber = (source: unknown, paths: string[]) => {
   return undefined;
 };
 
+const firstRatio = (source: unknown, paths: string[]) => {
+  const value = firstNumber(source, paths);
+  if (value === undefined) return undefined;
+  return value > 1 ? value / 100 : value;
+};
+
 const normalizeDate = (value: string | undefined) => {
   if (!value) return dayjs().subtract(1, "day").format("YYYY-MM-DD");
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -104,7 +110,7 @@ export const normalizeWork = (item: unknown): Work | null => {
   if (!isRecord(item)) {
     return null;
   }
-  
+
   const platformWorkId = firstString(item, [
     "book_id",
     "bookId",
@@ -202,7 +208,8 @@ export const normalizeDailyStats = (
     "show_pv",
     "exposure_count",
     "total_show_count",
-    "total_impression_count"
+    "total_impression_count",
+    "yesterday_sum_show_count"
   ]) ?? 0;
   const readers = firstNumber(item, [
     "read_count",
@@ -212,9 +219,32 @@ export const normalizeDailyStats = (
     "read_uv",
     "total_read_count",
     "click_count",
-    "click_cnt"
+    "click_cnt",
+    "yesterday_sum_read_count"
   ]) ?? 0;
-  const clicks = firstNumber(item, ["click_count", "click_cnt", "clicks"]) ?? readers;
+  const clickRate = firstRatio(item, ["click_rate", "clickRate"]);
+  const clicks = firstNumber(item, ["click_count", "click_cnt", "clicks"]) ??
+    (clickRate !== undefined ? impressions * clickRate : readers);
+  const readCompletionRate = firstRatio(item, [
+    "read_completion_rate",
+    "readCompletionRate",
+    "completion_rate",
+    "complete_rate",
+    "finish_rate",
+    "read_100_percent_rate",
+    "bottom_rate"
+  ]);
+  const finishedReaders = firstNumber(item, [
+    "finish_read_count",
+    "finished_readers",
+    "finishedReaders",
+    "read_finish_count",
+    "read_end_count",
+    "complete_read_count",
+    "read_100_percent_count",
+    "read_count_100_percent",
+    "yesterday_sum_read_100_percent_count"
+  ]) ?? (readCompletionRate !== undefined ? readers * readCompletionRate : null);
 
   return {
     platformWorkId,
@@ -222,18 +252,29 @@ export const normalizeDailyStats = (
     impressions,
     clicks,
     readers,
-    retention15s: firstNumber(item, ["retention_15s", "retention15s", "stay_15s_rate"]) ?? null,
-    retention30s: firstNumber(item, ["retention_30s", "retention30s", "stay_30s_rate"]) ?? null,
-    retention60s: firstNumber(item, ["retention_60s", "retention60s", "stay_60s_rate"]) ?? null,
-    finishedReaders:
-      firstNumber(item, [
-        "finish_read_count",
-        "finished_readers",
-        "finishedReaders",
-        "read_finish_count",
-        "read_end_count",
-        "complete_read_count"
-      ]) ?? null,
+    retention15s: firstNumber(item, [
+      "retention_15s",
+      "retention15s",
+      "stay_15s_rate",
+      "read_count_15s",
+      "yesterday_sum_read_count_15s"
+    ]) ?? null,
+    retention30s: firstNumber(item, [
+      "retention_30s",
+      "retention30s",
+      "stay_30s_rate",
+      "read_count_30s",
+      "yesterday_sum_read_count_30s"
+    ]) ?? null,
+    retention60s: firstNumber(item, [
+      "retention_60s",
+      "retention60s",
+      "stay_60s_rate",
+      "read_count_60s",
+      "yesterday_sum_read_count_60s"
+    ]) ?? null,
+    finishedReaders,
+    readCompletionRate: readCompletionRate ?? null,
     groupHeat: firstNumber(item, ["group_heat", "groupHeat", "channel_heat", "heat"]) ?? null,
     comments: firstNumber(item, ["comment_count", "comments", "comment_cnt"]) ?? 0,
     likes: firstNumber(item, ["digg_count", "like_count", "likes", "digg_cnt"]) ?? 0,

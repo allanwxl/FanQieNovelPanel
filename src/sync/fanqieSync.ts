@@ -11,8 +11,8 @@ import {
 
 const PAGE_SIZE = 20;
 const MAX_PAGES = 20;
-const SYNC_DAYS = 60;
-const REQUEST_DELAY_MS = 250;
+const DEFAULT_LOOKBACK_DAYS = 14;
+const REQUEST_DELAY_MS = 120;
 
 const sleep = (ms: number) => new Promise((resolve) => globalThis.setTimeout(resolve, ms));
 
@@ -35,6 +35,37 @@ const uniqueStats = (stats: WorkDailyStats[]) => {
   const map = new Map<string, WorkDailyStats>();
   for (const item of stats) map.set(`${item.platformWorkId}:${item.statDate}`, item);
   return [...map.values()];
+};
+
+const updateSyncProgress = async (current: number, total: number, prefix = "正在同步指标") => {
+  await db.syncState.put({
+    id: "main",
+    status: "running",
+    lastSyncedAt: new Date().toISOString(),
+    message: total > 0 ? `${prefix} ${current}/${total}` : "作品列表已同步，暂无缺失日期指标。",
+    progressCurrent: current,
+    progressTotal: total
+  });
+};
+
+const getMissingStatDates = async (workId: string) => {
+  const endDate = yesterday();
+  const existing = await db.workDailyStats
+    .where("[platformWorkId+statDate]")
+    .between(
+      [workId, dayjs(endDate).subtract(DEFAULT_LOOKBACK_DAYS - 1, "day").format("YYYY-MM-DD")],
+      [workId, endDate]
+    )
+    .toArray();
+  const existingDates = new Set(existing.map((item) => item.statDate));
+  const missingDates: string[] = [];
+
+  for (let offset = DEFAULT_LOOKBACK_DAYS - 1; offset >= 0; offset -= 1) {
+    const statDate = dayjs(endDate).subtract(offset, "day").format("YYYY-MM-DD");
+    if (!existingDates.has(statDate)) missingDates.push(statDate);
+  }
+
+  return missingDates;
 };
 
 const fetchStatsBookListWorks = async () => {
@@ -94,34 +125,49 @@ const fetchWorks = async () => {
   return fetchShortArticleWorks();
 };
 
-const fetchStatsForWork = async (work: Work) => {
-  const endDate = yesterday();
-  const startDate = dayjs(endDate).subtract(SYNC_DAYS - 1, "day").format("YYYY-MM-DD");
+const fetchStatsForWork = async (
+  work: Work,
+  missingDates: string[],
+  onDateSynced: () => Promise<void>
+) => {
+  const stats: WorkDailyStats[] = [];
 
-  try {
-    const byDateResult = await fanqieGet<unknown>({
-      path: fanqieEndpoints.shortStatsSingleByDate,
-      query: {
-        book_id: work.platformWorkId,
-        start_date: startDate,
-        end_date: endDate
+  for (const statDate of missingDates) {
+    try {
+      const byDateResult = await fanqieGet<unknown>({
+        path: fanqieEndpoints.shortStatsSingleByDate,
+        query: {
+          book_id: work.platformWorkId,
+          start_date: dayjs(statDate).startOf("day").unix(),
+          end_date: dayjs(statDate).endOf("day").unix()
+        }
+      });
+      const byDateData = ensureOk(`作品 ${work.platformWorkId} ${statDate} 日期指标`, byDateResult);
+      const items = extractFanqieList(byDateData);
+
+      if (items.length > 0) {
+        stats.push(...items.map((item) => normalizeDailyStats(item, work.platformWorkId, statDate)));
+      } else if (byDateData && typeof byDateData === "object" && !Array.isArray(byDateData)) {
+        stats.push(normalizeDailyStats(byDateData, work.platformWorkId, statDate));
       }
-    });
-    const byDateData = ensureOk(`作品 ${work.platformWorkId} 日期指标`, byDateResult);
-    const items = extractFanqieList(byDateData);
-    const stats = items.map((item) => normalizeDailyStats(item, work.platformWorkId));
+    } catch {
+      // Keep syncing other dates and use the cumulative fallback if no daily data is available at all.
+    }
 
-    if (stats.length > 0) return stats;
-  } catch {
-    // singleByDate 失败时尝试 singleCommon
+    await onDateSynced();
+    await sleep(REQUEST_DELAY_MS);
   }
+
+  if (stats.length > 0) return stats;
+
+  if (missingDates.length === 0) return stats;
 
   const commonResult = await fanqieGet<unknown>({
     path: fanqieEndpoints.shortStatsSingleCommon,
     query: { book_id: work.platformWorkId }
   });
   const commonData = ensureOk(`作品 ${work.platformWorkId} 累计指标`, commonResult);
-  return [normalizeCommonStatsAsDaily(commonData, work.platformWorkId, endDate)];
+  return [normalizeCommonStatsAsDaily(commonData, work.platformWorkId, yesterday())];
 };
 
 export const syncFanqieData = async (): Promise<SyncResult> => {
@@ -129,8 +175,10 @@ export const syncFanqieData = async (): Promise<SyncResult> => {
   await db.syncState.put({
     id: "main",
     status: "running",
-    message: "正在同步番茄后台数据...",
-    lastSyncedAt: startedAt
+    message: "正在读取作品列表...",
+    lastSyncedAt: startedAt,
+    progressCurrent: 0,
+    progressTotal: 0
   });
 
   try {
@@ -140,11 +188,26 @@ export const syncFanqieData = async (): Promise<SyncResult> => {
     const works = await fetchWorks();
     if (works.length === 0) throw new Error("作品列表为空，请确认账号下有短故事数据。");
 
+    const workPlans = await Promise.all(
+      works.map(async (work) => ({
+        work,
+        missingDates: await getMissingStatDates(work.platformWorkId)
+      }))
+    );
+    const progressTotal = workPlans.reduce((total, plan) => total + plan.missingDates.length, 0);
+    let progressCurrent = 0;
+    await updateSyncProgress(progressCurrent, progressTotal);
+
     const stats: WorkDailyStats[] = [];
     let failedStatsCount = 0;
-    for (const work of works) {
+    for (const plan of workPlans) {
       try {
-        stats.push(...(await fetchStatsForWork(work)));
+        stats.push(
+          ...(await fetchStatsForWork(plan.work, plan.missingDates, async () => {
+            progressCurrent += 1;
+            await updateSyncProgress(progressCurrent, progressTotal);
+          }))
+        );
       } catch (error) {
         failedStatsCount += 1;
         stats.push(
@@ -152,7 +215,7 @@ export const syncFanqieData = async (): Promise<SyncResult> => {
             {
               sync_error: error instanceof Error ? error.message : String(error)
             },
-            work.platformWorkId,
+            plan.work.platformWorkId,
             yesterday()
           )
         );
@@ -164,17 +227,18 @@ export const syncFanqieData = async (): Promise<SyncResult> => {
     const syncedAt = new Date().toISOString();
     await db.transaction("rw", db.works, db.workDailyStats, db.syncState, async () => {
       await db.works.clear();
-      await db.workDailyStats.clear();
       await db.works.bulkPut(works);
-      await db.workDailyStats.bulkPut(dedupedStats);
+      if (dedupedStats.length > 0) await db.workDailyStats.bulkPut(dedupedStats);
       await db.syncState.put({
         id: "main",
         status: "success",
         lastSyncedAt: syncedAt,
+        progressCurrent,
+        progressTotal,
         message:
           failedStatsCount > 0
-            ? `已同步 ${works.length} 部作品、${dedupedStats.length} 条日期指标；${failedStatsCount} 部作品暂无可用指标。`
-            : `已同步 ${works.length} 部作品、${dedupedStats.length} 条日期指标。`
+            ? `已同步 ${works.length} 部作品，新增 ${dedupedStats.length} 条日期指标；${failedStatsCount} 部作品暂无可用指标。`
+            : `已同步 ${works.length} 部作品，新增 ${dedupedStats.length} 条日期指标。`
       });
     });
 
@@ -182,6 +246,7 @@ export const syncFanqieData = async (): Promise<SyncResult> => {
       ok: true,
       worksSynced: works.length,
       statsSynced: dedupedStats.length,
+      progressTotal,
       syncedAt
     };
   } catch (error) {
@@ -190,7 +255,9 @@ export const syncFanqieData = async (): Promise<SyncResult> => {
       id: "main",
       status: "failed",
       lastSyncedAt: new Date().toISOString(),
-      message
+      message,
+      progressCurrent: 0,
+      progressTotal: 0
     });
     return { ok: false, error: message };
   }

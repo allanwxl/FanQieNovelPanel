@@ -53,7 +53,29 @@ type ProbeResult = {
   }>;
 };
 
+const mobileSortOptions = [
+  { value: "finishedReaders:desc", label: "触底从高到低" },
+  { value: "readCompletionRate:desc", label: "触底率从高到低" },
+  { value: "readers:desc", label: "阅读从高到低" },
+  { value: "impressions:desc", label: "展现从高到低" },
+  { value: "clickRate:desc", label: "点击率从高到低" },
+  { value: "growthRate7d:desc", label: "7日增长从高到低" },
+  { value: "score:desc", label: "推荐分从高到低" }
+] as const;
+
 const columnHelper = createColumnHelper<AggregatedWork>();
+
+const formatSyncStatus = (syncState?: SyncState) => {
+  if (!syncState?.message) return "本地面板已就绪";
+  if (
+    syncState.status === "running" &&
+    syncState.progressTotal !== undefined &&
+    syncState.progressTotal > 0
+  ) {
+    return `${syncState.message}`;
+  }
+  return syncState.message;
+};
 
 const columns = [
   columnHelper.accessor((row) => row.work.title, {
@@ -104,7 +126,7 @@ const columns = [
 
 export function App() {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [range, setRange] = useState<Exclude<TimeRangePreset, "custom">>("7d");
+  const [range, setRange] = useState<Exclude<TimeRangePreset, "custom">>("14d");
   const [query, setQuery] = useState("");
   const [sorting, setSorting] = useState<SortingState>([{ id: "finishedReaders", desc: true }]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -119,7 +141,11 @@ export function App() {
     const loaded = await loadDashboardData();
     const rows = aggregateWorks(loaded.works, loaded.stats, loaded.marks, rangeDates.start, rangeDates.end);
     setData({ ...loaded, rows, syncState: loaded.syncState });
-    setSelectedId((current) => current ?? rows[0]?.work.platformWorkId ?? null);
+    setSelectedId((current) =>
+      current && rows.some((row) => row.work.platformWorkId === current)
+        ? current
+        : rows[0]?.work.platformWorkId ?? null
+    );
     setLoading(false);
   };
 
@@ -133,21 +159,46 @@ export function App() {
       const loaded = await loadDashboardData();
       const rows = aggregateWorks(loaded.works, loaded.stats, loaded.marks, rangeDates.start, rangeDates.end);
       setData({ ...loaded, rows, syncState: loaded.syncState });
-      setSelectedId((current) => current ?? rows[0]?.work.platformWorkId ?? null);
+      setSelectedId(rows[0]?.work.platformWorkId ?? null);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [rangeDates.start, rangeDates.end]);
+
+  useEffect(() => {
+    if (!loading) return;
+
+    const timer = globalThis.setInterval(async () => {
+      const loaded = await loadDashboardData();
+      const rows = aggregateWorks(loaded.works, loaded.stats, loaded.marks, rangeDates.start, rangeDates.end);
+      setData({ ...loaded, rows, syncState: loaded.syncState });
+    }, 600);
+
+    return () => globalThis.clearInterval(timer);
+  }, [loading, rangeDates.start, rangeDates.end]);
 
   const filteredRows = useMemo(() => {
     const rows = data?.rows ?? [];
     if (!query.trim()) return rows;
     return rows.filter((row) => row.work.title.includes(query.trim()));
   }, [data?.rows, query]);
+
+  useEffect(() => {
+    if (!filteredRows.length) {
+      setSelectedId(null);
+      return;
+    }
+
+    setSelectedId((current) =>
+      current && filteredRows.some((row) => row.work.platformWorkId === current)
+        ? current
+        : filteredRows[0].work.platformWorkId
+    );
+  }, [filteredRows]);
 
   const table = useReactTable({
     data: filteredRows,
@@ -162,8 +213,8 @@ export function App() {
   });
 
   const selected = useMemo(
-    () => data?.rows.find((row) => row.work.platformWorkId === selectedId) ?? data?.rows[0],
-    [data?.rows, selectedId]
+    () => filteredRows.find((row) => row.work.platformWorkId === selectedId) ?? filteredRows[0],
+    [filteredRows, selectedId]
   );
 
   const totals = useMemo(() => {
@@ -188,6 +239,19 @@ export function App() {
     anchor.download = `番茄短故事数据-${rangeDates.start}-${rangeDates.end}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleRangeChange = (nextRange: Exclude<TimeRangePreset, "custom">) => {
+    if (nextRange === range) return;
+    setSelectedId(null);
+    setRange(nextRange);
+  };
+
+  const currentMobileSort = `${sorting[0]?.id ?? "finishedReaders"}:${sorting[0]?.desc === false ? "asc" : "desc"}`;
+
+  const handleMobileSortChange = (value: string) => {
+    const [id, direction] = value.split(":");
+    setSorting([{ id, desc: direction !== "asc" }]);
   };
 
   const handleProbeApis = async () => {
@@ -232,7 +296,7 @@ export function App() {
           <h1>番茄短故事数据面板</h1>
         </div>
         <div className="topbar-actions">
-          <span className="sync-status">{data?.syncState.message ?? "本地面板已就绪"}</span>
+          <span className="sync-status">{formatSyncStatus(data?.syncState)}</span>
           <button className="command-button" onClick={handleProbeApis} disabled={probeLoading} type="button">
             <FlaskConical size={16} />
             {probeLoading ? "验证中" : "验证接口"}
@@ -279,13 +343,16 @@ export function App() {
                 <button
                   key={item}
                   className={range === item ? "active" : ""}
-                  onClick={() => setRange(item)}
+                  onClick={() => handleRangeChange(item)}
                   type="button"
                 >
                   {RANGE_LABELS[item]}
                 </button>
               ))}
             </div>
+            <span className="range-summary">
+              {rangeDates.start} 至 {rangeDates.end}
+            </span>
 
             <label className="search-box">
               <Search size={16} />
@@ -338,6 +405,17 @@ export function App() {
             </table>
 
             <div className="card-list mobile-only">
+              <label className="mobile-sort">
+                <span>排序</span>
+                <select value={currentMobileSort} onChange={(event) => handleMobileSortChange(event.target.value)}>
+                  {mobileSortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               {table.getRowModel().rows.map((row) => (
                 <div
                   key={row.id}

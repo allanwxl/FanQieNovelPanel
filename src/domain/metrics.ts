@@ -8,6 +8,28 @@ const safeRatio = (numerator: number, denominator: number) => {
 
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
 
+const completionRateFromStats = (items: WorkDailyStats[]) => {
+  const readers = sum(items.map((item) => item.readers));
+  const finishedReaders = sum(items.map((item) => item.finishedReaders ?? 0));
+  if (finishedReaders > 0) return safeRatio(finishedReaders, readers);
+
+  const weightedRate = sum(
+    items.map((item) => (item.readCompletionRate ?? 0) * (item.readers || 1))
+  );
+  const weight = sum(
+    items.map((item) =>
+      item.readCompletionRate === null || item.readCompletionRate === undefined ? 0 : item.readers || 1
+    )
+  );
+  return safeRatio(weightedRate, weight);
+};
+
+const finishedReadersFromStats = (items: WorkDailyStats[]) => {
+  const explicit = sum(items.map((item) => item.finishedReaders ?? 0));
+  if (explicit > 0) return explicit;
+  return sum(items.map((item) => (item.readCompletionRate ?? 0) * item.readers));
+};
+
 const inRange = (date: string, start: string, end: string) => {
   const day = dayjs(date);
   return (day.isAfter(dayjs(start)) || day.isSame(dayjs(start), "day")) &&
@@ -52,10 +74,7 @@ export const aggregateWorks = (
     return {
       impressions: sum(items.map((item) => item.impressions)),
       clickRate: safeRatio(sum(items.map((item) => item.clicks)), sum(items.map((item) => item.impressions))),
-      completionRate: safeRatio(
-        sum(items.map((item) => item.finishedReaders ?? 0)),
-        sum(items.map((item) => item.readers))
-      )
+      completionRate: completionRateFromStats(items)
     };
   });
 
@@ -68,13 +87,13 @@ export const aggregateWorks = (
     const impressions = sum(items.map((item) => item.impressions));
     const clicks = sum(items.map((item) => item.clicks));
     const readers = sum(items.map((item) => item.readers));
-    const finishedReaders = sum(items.map((item) => item.finishedReaders ?? 0));
+    const finishedReaders = finishedReadersFromStats(items);
     const groupHeat = sum(items.map((item) => item.groupHeat ?? 0));
     const comments = sum(items.map((item) => item.comments));
     const likes = sum(items.map((item) => item.likes));
     const shelves = sum(items.map((item) => item.shelves));
     const clickRate = safeRatio(clicks, impressions);
-    const readCompletionRate = safeRatio(finishedReaders, readers);
+    const readCompletionRate = completionRateFromStats(items);
     const shelfRate = safeRatio(shelves, readers);
     const growthRate7d = calculateRecentGrowth(stats, work.platformWorkId, endDate);
     const promotion = markByWork.get(work.platformWorkId);

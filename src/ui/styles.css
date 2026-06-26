@@ -32,7 +32,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -243,6 +244,7 @@ h2 {
 
 .main-panel,
 .side-panel section {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--paper);
@@ -281,6 +283,13 @@ h2 {
   color: #fff;
 }
 
+.range-summary {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .search-box {
   display: flex;
   align-items: center;
@@ -302,6 +311,7 @@ h2 {
 }
 
 .table-wrap {
+  min-width: 0;
   overflow: auto;
 }
 
@@ -583,6 +593,10 @@ tbody tr.selected {
   transition: border-color 140ms ease;
 }
 
+.mobile-sort {
+  display: none;
+}
+
 .work-card:hover,
 .work-card.selected {
   border-color: var(--accent);
@@ -704,33 +718,85 @@ tbody tr.selected {
     font-size: 20px;
   }
 
+  .eyebrow {
+    font-size: 11px;
+  }
+
   .topbar-actions {
     justify-content: flex-end;
+    gap: 6px;
   }
 
   .command-button {
     flex: 1;
     min-width: 0;
+    min-height: 34px;
+    padding: 0 9px;
+    font-size: 12px;
   }
 
   .metric-strip {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .metric-card {
     min-width: unset;
+    min-height: 58px;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .metric-card:last-child {
+    grid-column: span 2;
+  }
+
+  .metric-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+  }
+
+  .metric-card p {
+    font-size: 11px;
+  }
+
+  .metric-card strong {
+    margin-top: 3px;
+    font-size: 18px;
   }
 
   .toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
+    padding: 10px;
   }
 
   .segmented {
+    width: 100%;
     grid-template-columns: repeat(4, 1fr);
   }
 
+  .segmented button {
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .range-summary {
+    width: 100%;
+    text-align: center;
+    font-size: 11px;
+  }
+
   .search-box {
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+  }
+
+  .toolbar > .command-button {
     width: 100%;
   }
 
@@ -738,7 +804,92 @@ tbody tr.selected {
     grid-template-columns: 1fr;
   }
 
+  .card-list {
+    padding: 8px;
+  }
+
+  .mobile-sort {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper-soft);
+  }
+
+  .mobile-sort span {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .mobile-sort select {
+    min-width: 0;
+    width: 100%;
+    height: 30px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .work-card {
+    margin-bottom: 8px;
+    padding: 10px;
+  }
+
+  .work-card-header {
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .work-card-title {
+    font-size: 13px;
+  }
+
+  .work-card-meta {
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+
   .work-card-stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px 8px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .stat-value {
+    font-size: 12px;
+  }
+
+  .score-badge {
+    min-width: 54px;
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+
+  .recommendation,
+  .detail {
+    padding: 12px;
+  }
+
+  .detail-grid div {
+    padding: 8px;
+  }
+
+  .trend-chart {
+    height: 190px;
+  }
+
+  .trend-chart svg {
+    height: 160px;
   }
 }
